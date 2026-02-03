@@ -1,33 +1,49 @@
+import os
 import json
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 from typing import Optional
-
+from google.genai.errors import ClientError
+from app.exceptions import ImageGenerationError
 from llm_core.prompt_templates import (
     get_lesson_request_template,
     get_system_instructions,
     get_quiz_system_instruction,
 )
 from app.models.quiz_models import GeneratedQuiz
-from testing.testing_data import TEST_LESSON_OUTPUT, TEST_QUIZ_OBJECT_PERFECT
+from testing.testing_data import TEST_LESSON_OUTPUT, TEST_QUIZ_OBJECT_PERFECT, TEST_IMAGE_BASE64
 
-# Load the API key from the .env file
-load_dotenv()
-client = genai.Client()
+_client = None
+
+
+def get_genai_client():
+    global _client
+
+    if _client is not None:
+        return _client
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return None  # important
+
+    _client = genai.Client(api_key=api_key)
+    return _client
 
 LIVERUN = False
 
 
 def generate_daily_lesson(
-    year_group: str, subject: str, topic_idea: str = "", liverun: bool = LIVERUN
+    year_group: int, subject: str, topic_idea: str = "", liverun: bool = LIVERUN
 ) -> str:
     """Generates the lesson content and a prompt for a visual aid."""
 
     if not liverun:
         print("returning test results")
         return TEST_LESSON_OUTPUT
+
+    client = get_genai_client()
 
     # 3. API Call
     response = client.models.generate_content(
@@ -50,7 +66,7 @@ def generate_daily_lesson(
 
 
 def generate_quiz_from_lesson(
-    lesson_text: str, year_group: str, liverun: bool = LIVERUN
+    lesson_text: str, year_group: int, liverun: bool = LIVERUN
 ) -> Optional[GeneratedQuiz]:
     """
     Generates a structured quiz based on the lesson text using Pydantic schema.
@@ -63,6 +79,8 @@ def generate_quiz_from_lesson(
     if not liverun:
         print("returning test quiz")
         return TEST_QUIZ_OBJECT_PERFECT
+
+    client = get_genai_client()
 
     # 1. System Instruction (Persona and Constraint)
     system_instruction = get_quiz_system_instruction(year_group)
@@ -112,3 +130,31 @@ def generate_quiz_from_lesson(
         # Optionally print the raw text response for debugging
         # print(f"Raw Response: {response.text}")
         return None
+
+
+def generate_image_from_prompt(prompt: str, liverun: bool = LIVERUN) -> str:
+
+    if not liverun:
+        return TEST_IMAGE_BASE64
+
+    client = get_genai_client()
+    try:
+        response = client.models.generate_images(
+            model="imagen-4.0-generate-001",
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="16:9",
+            ),
+        )
+        generated = response.generated_images[0]
+        image_bytes = generated.image.image_bytes
+
+        if not image_bytes:
+            raise ImageGenerationError(message="No Image", status_code=502)
+
+        return image_bytes
+    except ClientError as e:
+        status_code = getattr(e, "status_code", 400)
+        message = str(e)
+        raise ImageGenerationError(message=message, status_code=status_code) from e

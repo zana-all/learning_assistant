@@ -6,7 +6,7 @@ from app.models.lesson_models import (
     ImageResponse,
 )
 from services.lesson_service import get_lesson
-from services.image_serivce import generate_image_from_prompt
+from llm_core.generation_service import generate_image_from_prompt
 from app.exceptions import ImageGenerationError
 
 router = APIRouter(prefix="/v1", tags=["Lesson"])

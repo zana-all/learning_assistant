@@ -4,7 +4,7 @@ from typing import List, Literal
 
 class QuizRequest(BaseModel):
     lesson_text: str
-    year_group: str = Field(..., examples=["Year 8"])
+    year_group: int = Field(..., ge=1, le=13)
 
 
 AnswerKey = Literal["A", "B", "C", "D"]

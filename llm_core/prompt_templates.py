@@ -1,5 +1,5 @@
 # 1. System Instruction (Persona and Rules)
-def get_system_instructions(year_group: str, subject: str) -> str:
+def get_system_instructions(year_group: int, subject: str) -> str:
     """Return system instructions"""
     return f""" You are an expert, friendly, and engaging tutor for
     a student in Year **{year_group} {subject}**.
@@ -10,7 +10,7 @@ def get_system_instructions(year_group: str, subject: str) -> str:
 
 # 2. User Prompt (The Request and Structure)
 def get_lesson_request_template(
-    year_group: str, subject: str, topic_idea: str | None = None
+    year_group: int, subject: str, topic_idea: str | None = None
 ) -> str:
     topic_line = (
         f'The lesson must focus specifically on "{topic_idea}".' if topic_idea else ""

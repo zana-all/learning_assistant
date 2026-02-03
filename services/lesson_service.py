@@ -13,7 +13,7 @@ def parse_lesson_response(text: str) -> dict:
         raise ValueError(f"Invalid JSON returned by LLM: {e}")
 
 
-def get_lesson(year_group: str, subject: str, topic_idea: str) -> str:
+def get_lesson(year_group: int, subject: str, topic_idea: str) -> str:
     res = generate_daily_lesson(
         year_group=year_group,
         subject=subject,
@@ -22,7 +22,7 @@ def get_lesson(year_group: str, subject: str, topic_idea: str) -> str:
     return parse_lesson_response(res)
 
 
-def get_quiz(lesson_text: str, year_group: str) -> Optional[GeneratedQuiz]:
+def get_quiz(lesson_text: str, year_group: int) -> Optional[GeneratedQuiz]:
     return generate_quiz_from_lesson(
         lesson_text=lesson_text,
         year_group=year_group,
