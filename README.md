@@ -2,7 +2,9 @@
 
 ## Overview
 
-This repository contains the backend for a **Learning Assistant** application designed to generate educational content and supporting assets based on a given topic and learner context. It also offers quiz based on the topic and summary of scores
+This repository contains the backend for a **Learning Assistant** application designed to generate educational content and supporting assets based on a given topic and learner context. It also tracks quiz attempts and provides summary statistics to help learners reflect on their progress.
+
+Content generation is powered by a **Google Gemini large language model (LLM)**. To support local development, testing, and demo scenarios without external dependencies, the application defaults to a **non-live mode** (`liverun = false`) which returns deterministic, hardcoded responses. When enabled, live mode uses the LLM to generate content dynamically.
 
 The purpose of this project is to demonstrate:
 

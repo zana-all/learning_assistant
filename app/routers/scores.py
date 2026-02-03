@@ -10,7 +10,7 @@ from app.models.scores_model import (
     SubjectSummary,
 )
 
-router = APIRouter(prefix="/scores", tags=["scores"])
+router = APIRouter(prefix="/scores", tags=["Scores"])
 
 
 @router.post("", response_model=ScoreCreated)
