@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+google-genai
+pydantic
+python-dotenv
+aiosqlite
+pytest
+pytest_asyncio
