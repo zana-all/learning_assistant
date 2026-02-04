@@ -1,12 +1,11 @@
 import os
 import json
+from typing import Optional
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from google.genai.errors import APIError
-from typing import Optional
-from google.genai.errors import ClientError
-from app.exceptions import ImageGenerationError
+from google.genai.errors import APIError, ClientError
+from app.exceptions import ImageGenerationError, ConfigurationError, LessonGenerationError
 from llm_core.prompt_templates import (
     get_lesson_request_template,
     get_system_instructions,
@@ -16,6 +15,7 @@ from app.models.quiz_models import GeneratedQuiz
 from testing.testing_data import TEST_LESSON_OUTPUT, TEST_QUIZ_OBJECT_PERFECT, TEST_IMAGE_BASE64
 
 _client = None
+load_dotenv()
 
 
 def get_genai_client():
@@ -26,7 +26,10 @@ def get_genai_client():
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        return None  # important
+        raise ConfigurationError(
+            "GOOGLE_API_KEY is not set",
+            status_code=503,
+        )
 
     _client = genai.Client(api_key=api_key)
     return _client
@@ -45,24 +48,36 @@ def generate_daily_lesson(
 
     client = get_genai_client()
 
-    # 3. API Call
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",  # Use the cost-effective model
-        contents=[
-            {
-                "role": "user",
-                "parts": [
-                    {"text": get_system_instructions(year_group, subject)},
-                    {
-                        "text": get_lesson_request_template(
-                            year_group, subject, topic_idea
-                        )
-                    },
-                ],
-            }
-        ],
-    )
-    return response.text
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",  # Use the cost-effective model
+            contents=[
+                {
+                    "role": "user",
+                    "parts": [
+                        {"text": get_system_instructions(year_group, subject)},
+                        {
+                            "text": get_lesson_request_template(
+                                year_group, subject, topic_idea
+                            )
+                        },
+                    ],
+                }
+            ],
+        )
+        return response.text
+    except ClientError as e:
+        raise LessonGenerationError(
+            message=str(e),
+            status_code=getattr(e, "status_code", 502),
+        ) from e
+
+    except Exception as e:
+        raise LessonGenerationError(
+            message="Unexpected error while generating lesson.",
+            status_code=502,
+        ) from e
 
 
 def generate_quiz_from_lesson(

@@ -4,7 +4,7 @@ from typing import Optional
 
 class ScoreCreate(BaseModel):
     subject: str = Field(min_length=1)
-    year_group: str = Field(..., examples=["Year 8"])
+    year_group: int = Field(..., ge=1, le=13)
     topic: Optional[str] = None
     score: int = Field(ge=0)
     total_questions: int = Field(ge=1)
